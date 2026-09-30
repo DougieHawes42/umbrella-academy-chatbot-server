@@ -4,6 +4,6 @@ import { chatSubmit } from "../controllers/chatController.js";
 
 const router = express.Router();
 
-router.post("/chat", chatSubmit);
+router.post("/", chatSubmit);
 
 export default router;

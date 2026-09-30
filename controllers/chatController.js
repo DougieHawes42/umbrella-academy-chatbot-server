@@ -11,29 +11,41 @@ const openai = new OpenAI({
 
 export const chatSubmit = async (req, res) => {
   try {
-    const { messages, bot } = req.body;
+    const { message, characterId, userName, history = [] } = req.body;
 
-    const aiMessages = [
-      {
-        role: "system",
-        content: botData.find((name) => name.botName === bot)?.personality,
-      },
-      ...messages.map((message) => ({
-        role: message.role,
-        content: message.content,
-      })),
-    ];
+    const selectedBot = botData.find((bot) => bot.id === characterId);
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: aiMessages,
+    const conversationHistory = history.map((item) => ({
+      role: item.role,
+      content: item.content,
+    }));
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: selectedBot.personality,
+        },
+        ...conversationHistory,
+        {
+          role: "user",
+          content: `The user's name is ${userName}. They said: ${message}`,
+        },
+      ],
     });
 
-    console.log("Personality:", bot);
-    console.log("Received messages:", aiMessages);
+    const aiResponse = completion.choices[0].message.content;
 
-    res.send(response.choices[0].message.content);
+    res.json({
+      message: "Chat response generated",
+      response: aiResponse,
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+
+    res.status(500).json({
+      error: "Something went wrong",
+    });
   }
 };
